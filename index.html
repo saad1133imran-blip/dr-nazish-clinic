@@ -14,6 +14,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://www.drnazishclinic.com/dr-nazish-clinic-og.jpg">
   <meta name="robots" content="index, follow">
+  <meta name="google-site-verification" content="auYn5GWZoRg4hqCFZMnxkZyPm6LtAIraohrpmj4oWsw" />
   <!-- ⚠️ SETUP REQUIRED: Replace YOUR_WA_NUMBER with actual WhatsApp number (e.g. 923041234567) -->
   <!-- ⚠️ SETUP REQUIRED: Replace YOUR_EMAIL with actual clinic email -->
   <!-- ⚠️ SETUP REQUIRED: Replace YOUR_PHOTO_URL with actual doctor photo URL -->
@@ -2385,23 +2386,140 @@
   </script>
 
   <script>
-  // Firebase auto-sync
+  // ═══════════════════════════════════════════════════════════
+  // FIREBASE FULL SYNC — Admin panel changes update here live
+  // ═══════════════════════════════════════════════════════════
   (function(){
     var FB = 'https://dr-nazish-clinic-5e0e5-default-rtdb.firebaseio.com';
+
     fetch(FB + '/clinic.json')
       .then(function(r){ return r.json(); })
       .then(function(d){
-        if(!d || !d.config) return;
-        var c = d.config;
-        if(c.phone) window.CLINIC.phone = c.phone;
-        if(c.phoneRaw) window.CLINIC.phoneRaw = c.phoneRaw;
-        if(c.email) window.CLINIC.email = c.email;
-        if(c.address) window.CLINIC.address = c.address;
-        if(c.doctorPhoto) window.CLINIC.doctorPhoto = c.doctorPhoto;
-        if(c.instagram) window.CLINIC.instagram = c.instagram;
-        if(c.facebook) window.CLINIC.facebook = c.facebook;
+        if(!d) return;
+
+        // ── 1. CONFIG (phone, email, address, etc.) ──
+        if(d.config){
+          var c = d.config;
+          if(c.phone)       window.CLINIC.phone       = c.phone;
+          if(c.phoneRaw)    window.CLINIC.phoneRaw    = c.phoneRaw;
+          if(c.email)       window.CLINIC.email       = c.email;
+          if(c.address)     window.CLINIC.address     = c.address;
+          if(c.doctorPhoto) window.CLINIC.doctorPhoto = c.doctorPhoto;
+          if(c.instagram)   window.CLINIC.instagram   = c.instagram;
+          if(c.facebook)    window.CLINIC.facebook    = c.facebook;
+          if(c.university)  window.CLINIC.university  = c.university;
+          if(c.regNumber)   window.CLINIC.regNumber   = c.regNumber;
+
+          // Update phone links on page
+          document.querySelectorAll('[data-clinic-phone]').forEach(function(el){
+            el.textContent = window.CLINIC.phone;
+          });
+          document.querySelectorAll('[data-clinic-email]').forEach(function(el){
+            el.textContent = window.CLINIC.email;
+          });
+          document.querySelectorAll('[data-clinic-address]').forEach(function(el){
+            el.textContent = window.CLINIC.address;
+          });
+          // Update WhatsApp links
+          document.querySelectorAll('a[href*="wa.me"]').forEach(function(a){
+            var msg = encodeURIComponent('Hello Dr. Nazish, I would like to book an appointment.');
+            a.href = 'https://wa.me/' + window.CLINIC.phoneRaw + '?text=' + msg;
+          });
+          // Update doctor photo if set
+          if(c.doctorPhoto){
+            document.querySelectorAll('.dr-photo-placeholder, .dr-avatar-big').forEach(function(el){
+              el.innerHTML = '<img src="'+c.doctorPhoto+'" alt="Dr. Nazish" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+            });
+          }
+        }
+
+        // ── 2. SERVICES ──
+        if(d.services && d.services.length){
+          // Update services grid if it exists
+          var svcGrid = document.querySelector('.services-grid, [data-section="services"]');
+          if(svcGrid){
+            svcGrid.innerHTML = '';
+            d.services.forEach(function(s){
+              svcGrid.innerHTML += '<div class="service-card tilt-card reveal">'
+                +'<div class="svc-icon">'+s.icon+'</div>'
+                +'<h3 class="svc-title" data-en="'+s.title+'" data-ur="'+s.titleUr+'">'+(currentLang==='ur'?s.titleUr:s.title)+'</h3>'
+                +'<p class="svc-desc" data-en="'+s.desc+'" data-ur="'+s.descUr+'">'+(currentLang==='ur'?s.descUr:s.desc)+'</p>'
+                +'<div class="svc-duration"><span>⏱</span><span data-en="'+s.duration+'" data-ur="'+s.durationUr+'">'+(currentLang==='ur'?s.durationUr:s.duration)+'</span></div>'
+                +'</div>';
+            });
+          }
+        }
+
+        // ── 3. STATS ──
+        if(d.stats && d.stats.length){
+          var statEls = document.querySelectorAll('.hs-num, .as-num');
+          d.stats.forEach(function(s, i){
+            if(statEls[i]) statEls[i].textContent = s.value;
+          });
+          var statLabels = document.querySelectorAll('.hs-lbl, .as-lbl');
+          d.stats.forEach(function(s, i){
+            if(statLabels[i]) statLabels[i].textContent = s.label;
+          });
+        }
+
+        // ── 4. TESTIMONIALS ──
+        if(d.testimonials && d.testimonials.length){
+          var testiContainer = document.querySelector('.testi-grid, .testimonials-grid');
+          if(testiContainer){
+            testiContainer.innerHTML = '';
+            d.testimonials.forEach(function(t){
+              testiContainer.innerHTML += '<div class="testi-card reveal">'
+                +'<div class="testi-stars">★★★★★</div>'
+                +'<p class="testi-text">"'+(currentLang==='ur'?t.textUr:t.text)+'"</p>'
+                +'<div class="testi-author">'
+                  +'<div class="testi-avatar">'+t.name.charAt(0)+'</div>'
+                  +'<div><div class="testi-name">'+t.name+'</div>'
+                  +'<div class="testi-condition">'+(currentLang==='ur'?t.conditionUr:t.condition)+'</div>'
+                +'</div></div></div>';
+            });
+          }
+        }
+
+        // ── 5. HOURS (Clinic Hours) ──
+        if(d.hours && d.hours.length){
+          var hoursContainer = document.querySelector('.hours-list, [data-section="hours"]');
+          if(hoursContainer){
+            hoursContainer.innerHTML = '';
+            d.hours.forEach(function(h){
+              var timeStr = h.closed ? 'Closed / بند' : (h.open + ' – ' + h.close);
+              hoursContainer.innerHTML += '<div class="hours-row-display">'
+                +'<span class="hours-day-name">'+(currentLang==='ur'?h.dayUr:h.day)+'</span>'
+                +'<span class="hours-time-val'+(h.closed?' closed':'')+'">'+(h.closed?'بند / Closed':timeStr)+'</span>'
+                +'</div>';
+            });
+          }
+        }
+
+        // ── 6. FAQs ──
+        if(d.faqs && d.faqs.length){
+          var faqContainer = document.querySelector('.faq-list, [data-section="faqs"]');
+          if(faqContainer){
+            faqContainer.innerHTML = '';
+            d.faqs.forEach(function(f, i){
+              faqContainer.innerHTML += '<div class="faq-item">'
+                +'<button class="faq-question" onclick="toggleFaq('+i+')" id="faq-q-'+i+'">'
+                  +'<span data-en="'+f.q+'" data-ur="'+f.qUr+'">'+(currentLang==='ur'?f.qUr:f.q)+'</span>'
+                  +'<span class="faq-icon">+</span>'
+                +'</button>'
+                +'<div class="faq-answer" id="faq-a-'+i+'">'
+                  +'<p data-en="'+f.a+'" data-ur="'+f.aUr+'">'+(currentLang==='ur'?f.aUr:f.a)+'</p>'
+                +'</div></div>';
+            });
+          }
+        }
+
+        // ── 7. ARTICLES/BLOG ──
+        if(d.articles && d.articles.length){
+          window._FB_ARTICLES = d.articles; // Available for blog section
+        }
+
       })
-      .catch(function(){});
+      .catch(function(err){ console.warn('Firebase sync failed:', err); });
   })();
   </script>
 </body>
